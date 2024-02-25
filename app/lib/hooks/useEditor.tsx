@@ -5,6 +5,7 @@ import QuillMarkdown from "quilljs-markdown";
 const defaultlOptions = {
   theme: "snow",
   placeholder: "Create a new post...",
+  
   modules: {
     toolbar: [
       ["bold", "italic", "underline", "strike"],
