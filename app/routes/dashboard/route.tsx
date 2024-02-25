@@ -26,14 +26,13 @@ export default function DashboardLayout() {
         </div>
       </div>
 
-      <div className="flex flex-1 bg-pink-400">
+      <div className="flex flex-1">
         <nav className="w-48 bg-violet-400 ">
           <ul>
             {navLinks.map(({ to, label }) => (
-              <li>
+              <li key={label}>
                 <NavLink
                   to={to}
-                  key={label}
                   className={({ isActive, isPending }) =>
                     isPending
                       ? "text-red-400"
@@ -50,7 +49,7 @@ export default function DashboardLayout() {
           </ul>
         </nav>
 
-        <main className="p-4">
+        <main className="p-8 flex-1">
           <Outlet />
         </main>
       </div>
