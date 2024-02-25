@@ -8,8 +8,10 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: stylesheet },
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
 ];
 
@@ -23,6 +25,9 @@ export default function App() {
         <Links />
       </head>
       <body>
+        <h1 className="text-red-500 text-3xl font-bold underline">
+          Hello world!
+        </h1>
         <Outlet />
         <ScrollRestoration />
         <Scripts />
