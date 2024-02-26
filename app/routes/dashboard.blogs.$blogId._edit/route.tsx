@@ -8,36 +8,43 @@ import { useActionData, useLoaderData } from "@remix-run/react";
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const blogId = params.blogId;
   try {
-    const blog = await db.blog.findFirst({
-      where: {
-        id: blogId,
-      },
-    });
-    return { blog };
+    if (blogId !== "new") {
+      const blog = await db.blog.findFirst({
+        where: {
+          id: blogId,
+        },
+      });
+      return { semanticHtml: blog?.semanticHtml, buttonLabel: "Update" };
+    }
+
+    return { semanticHtml: "", buttonLabel: "Create" };
   } catch (e) {
     console.log(`[BLOG/:blogId] - ERROR`, e);
-    return null;
+    return { semanticHtml: "", buttonLabel: "Create" };
   }
 };
 
 export default function CreateEditBlog() {
-  const loaderData = useLoaderData<typeof loader>();
+  const { semanticHtml = "", buttonLabel } = useLoaderData<typeof loader>();
   const actionData = useActionData<Promise<typeof action>>();
-  console.log({ actionData });
   return (
     <div>
       <h2>Create blog</h2>
-      <ClientOnly>{() => <Editor />}</ClientOnly>
+      <ClientOnly>
+        {() => <Editor semanticHtml={semanticHtml} buttonLabel={buttonLabel} />}
+      </ClientOnly>
     </div>
   );
 }
 
 export const action = async ({ params, request }: ActionFunctionArgs) => {
+  const method = request.method;
+  const blogId = params.blogId;
+
   const formData = await request.formData();
   const semanticHtml = formData.get("semantic-html")?.toString();
   invariant(semanticHtml, "Please provide a semantic html to save :)");
 
-  const blogId = params.blogId;
   if (blogId === "new") {
     const blog = await db.blog.create({
       data: {

@@ -1,18 +1,24 @@
 import { Form, useSubmit } from "@remix-run/react";
 import Quill from "quill";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Button } from "~/components/ui/button";
 import useEditor from "~/lib/hooks/useEditor";
 
 export let editor: Quill;
-export const Editor = ({ semanticHtml }: { semanticHtml: string }) => {
-  const editorEl = useRef();
+export const Editor = ({
+  semanticHtml,
+  buttonLabel,
+}: {
+  semanticHtml: string;
+  buttonLabel: string;
+}) => {
+  const editorEl = useRef<HTMLDivElement>();
   const editor = useEditor(editorEl);
   const submit = useSubmit();
 
-  useEffect(() => {
-    editor?.setText(semanticHtml);
-  }, []);
+  if (editor?.root?.innerHTML) {
+    editor.root.innerHTML = semanticHtml;
+  }
 
   const submitHandler = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,7 +39,7 @@ export const Editor = ({ semanticHtml }: { semanticHtml: string }) => {
           }}
         ></div>
 
-        <Button type="submit">Create</Button>
+        <Button type="submit">{buttonLabel}</Button>
       </Form>
     </>
   );

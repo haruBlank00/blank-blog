@@ -10,6 +10,7 @@ import {
 } from "@remix-run/react";
 import stylesheet from "~/tailwind.css";
 import quillStyle from "quill/dist/quill.snow.css";
+import { Toaster } from "~/components/ui/toaster";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -28,6 +29,7 @@ export default function App() {
         <Links />
       </head>
       <body>
+        <Toaster />
         <Outlet />
         <ScrollRestoration />
         <Scripts />
