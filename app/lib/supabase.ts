@@ -6,11 +6,27 @@ export const supabase = createClient(
   process.env.SUPABASE_ANON_KEY as string
 );
 
-export const createBucket = async (bucketName: string) => {
+// *** BUCKET AND STORAGE
+export const createBucket = async (
+  bucketName: string,
+  {
+    isPublic = false,
+    allowedMimeTypes = ["image/*"],
+    fileSizeLimit = "1MB",
+  }: {
+    isPublic?: boolean;
+    allowedMimeTypes: string[];
+    fileSizeLimit?: string | number | null | undefined;
+  }
+) => {
   if (!bucketName) {
     throw new Error("Bucket name is missing");
   }
-  const { data, error } = await supabase.storage.createBucket(bucketName);
+  const { data, error } = await supabase.storage.createBucket(bucketName, {
+    public: isPublic,
+    allowedMimeTypes,
+    fileSizeLimit,
+  });
   if (error) {
     throw new Error(error?.message);
   }
@@ -40,7 +56,11 @@ export const uploadToBucket = async (
   if (bucket.error) {
     if (bucket.error.message === "Bucket not found") {
       try {
-        const { data } = await createBucket(bucketName);
+        const { data } = await createBucket(bucketName, {
+          allowedMimeTypes: ["image/*"],
+          fileSizeLimit: "1MB",
+          isPublic: true,
+        });
       } catch (e) {
         console.log({ e });
       }
@@ -69,5 +89,14 @@ export const downloadFromBucket = async (
   const { data, error } = await supabase.storage
     .from(bucketName)
     .download(path);
+  return { data, error };
+};
+
+// *** SUPABASE AUTH
+export const signInWithPassword = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
   return { data, error };
 };
