@@ -11,6 +11,7 @@ import invariant from "tiny-invariant";
 import { db } from "~/lib/prisma";
 import { Editor } from "./editor.client";
 import { useActionData, useLoaderData } from "@remix-run/react";
+import { uploadToBucket } from "~/lib/supabase";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const blogId = params.blogId;
@@ -50,25 +51,28 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   const uploadHandler = unstable_composeUploadHandlers(
     // our custom upload handler
     async ({ name, contentType, data, filename }) => {
-      if (name !== "img") {
-        return undefined;
+      if (name === "cover-image") {
+        invariant(filename, "file name is missing");
+        const dataArray1 = [];
+        for await (const x of data) {
+          dataArray1.push(x);
+        }
+        try {
+          const bucket = await uploadToBucket(
+            "blogs",
+            "cover-images",
+            new File(dataArray1, filename, { type: contentType })
+          );
+        } catch (e) {
+          console.log({ e });
+        }
       }
-      console.log({ name, contentType, data, filename });
+      return undefined;
     },
     // fallback to memory for everything else
     unstable_createMemoryUploadHandler()
   );
 
-  // const uploadHandler = unstable_composeUploadHandlers(
-  //   unstable_createFileUploadHandler({
-  //     avoidFileConflicts: true,
-  //     directory: "/tmp",
-  //     file: ({ filename }) => filename,
-  //     maxPartSize: 5_000_000,
-  //   }),
-  //   unstable_createMemoryUploadHandler()
-  // );
-  // const formData = await request.formData();
   const formData = await unstable_parseMultipartFormData(
     request,
     uploadHandler
@@ -82,7 +86,6 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   invariant(semanticHtml, "Please provide a semantic html to save :)");
 
-  console.log(Object.entries(formData), "new foems");
   if (blogId === "new") {
     const blog = await db.blog.create({
       data: {

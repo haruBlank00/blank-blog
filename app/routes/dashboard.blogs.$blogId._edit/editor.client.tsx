@@ -70,7 +70,6 @@ export const Editor = ({
               required
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                console.log({ file });
                 if (file) {
                   setCoverImage(file);
                 }
