@@ -1,4 +1,11 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  unstable_composeUploadHandlers,
+  unstable_createFileUploadHandler,
+  unstable_createMemoryUploadHandler,
+  unstable_parseMultipartFormData,
+} from "@remix-run/node";
 import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/prisma";
@@ -38,13 +45,44 @@ export default function CreateEditBlog() {
 }
 
 export const action = async ({ params, request }: ActionFunctionArgs) => {
-  const method = request.method;
   const blogId = params.blogId;
 
-  const formData = await request.formData();
+  const uploadHandler = unstable_composeUploadHandlers(
+    // our custom upload handler
+    async ({ name, contentType, data, filename }) => {
+      if (name !== "img") {
+        return undefined;
+      }
+      console.log({ name, contentType, data, filename });
+    },
+    // fallback to memory for everything else
+    unstable_createMemoryUploadHandler()
+  );
+
+  // const uploadHandler = unstable_composeUploadHandlers(
+  //   unstable_createFileUploadHandler({
+  //     avoidFileConflicts: true,
+  //     directory: "/tmp",
+  //     file: ({ filename }) => filename,
+  //     maxPartSize: 5_000_000,
+  //   }),
+  //   unstable_createMemoryUploadHandler()
+  // );
+  // const formData = await request.formData();
+  const formData = await unstable_parseMultipartFormData(
+    request,
+    uploadHandler
+  );
+
   const semanticHtml = formData.get("semantic-html")?.toString();
+  const coverImage = formData.get("cover-image");
+  const title = formData.get("title");
+
+  console.log({ semanticHtml, coverImage, title });
+
   invariant(semanticHtml, "Please provide a semantic html to save :)");
 
+  console.log(Object.entries(formData), "new foems");
   if (blogId === "new") {
     const blog = await db.blog.create({
       data: {

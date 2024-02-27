@@ -1,17 +1,22 @@
-import { useActionData, useLoaderData, useNavigate } from "@remix-run/react";
+import { PrismaClientInitializationError } from "@prisma/client/runtime/library";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import { Plus } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { DataTable } from "~/components/ui/data-table";
 import { db } from "~/lib/prisma";
 import { columns } from "./table/columns";
-import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
-import invariant from "tiny-invariant";
-import { useToast } from "~/components/ui/use-toast";
-import { useEffect } from "react";
 
 export const loader = async () => {
-  const blogs = await db.blog.findMany({});
-  return { blogs };
+  try {
+    const blogs = await db.blog.findMany({});
+    return { blogs };
+  } catch (e) {
+    console.log({ e });
+    // if (e instanceof PrismaClientInitializationError) {
+    //   // return null;
+    // }
+    return { blogs: [] };
+  }
 };
 
 export default function Blogs() {
