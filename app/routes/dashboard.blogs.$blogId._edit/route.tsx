@@ -1,17 +1,22 @@
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
+  redirect,
   unstable_composeUploadHandlers,
-  unstable_createFileUploadHandler,
   unstable_createMemoryUploadHandler,
   unstable_parseMultipartFormData,
 } from "@remix-run/node";
+import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
+import { serialize } from "@supabase/ssr";
 import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/prisma";
+import {
+  createServerClient,
+  getPublicUrl,
+  uploadToBucket,
+} from "~/lib/supabase";
 import { Editor } from "./editor.client";
-import { useActionData, useLoaderData } from "@remix-run/react";
-import { uploadToBucket } from "~/lib/supabase";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const blogId = params.blogId;
@@ -22,24 +27,43 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
           id: blogId,
         },
       });
-      return { semanticHtml: blog?.semanticHtml, buttonLabel: "Update" };
-    }
 
-    return { semanticHtml: "", buttonLabel: "Create" };
+      const { id, semanticHtml, title, coverImageUrl } = blog || {};
+      console.log(coverImageUrl);
+      return {
+        id,
+        semanticHtml,
+        title,
+        coverImageUrl,
+        buttonLabel: "Update",
+      };
+    }
   } catch (e) {
     console.log(`[BLOG/:blogId] - ERROR`, e);
-    return { semanticHtml: "", buttonLabel: "Create" };
   }
+  return { semanticHtml: "", buttonLabel: "", title: "", coverImageUrl: "" };
 };
 
 export default function CreateEditBlog() {
-  const { semanticHtml = "", buttonLabel } = useLoaderData<typeof loader>();
+  const {
+    semanticHtml = "",
+    buttonLabel,
+    title = "",
+    coverImageUrl = "",
+  } = useLoaderData<typeof loader>();
   const actionData = useActionData<Promise<typeof action>>();
   return (
     <div>
       <h2>Create blog</h2>
       <ClientOnly>
-        {() => <Editor semanticHtml={semanticHtml} buttonLabel={buttonLabel} />}
+        {() => (
+          <Editor
+            semanticHtml={semanticHtml}
+            title={title}
+            coverImageUrl={coverImageUrl}
+            buttonLabel={buttonLabel}
+          />
+        )}
       </ClientOnly>
     </div>
   );
@@ -48,8 +72,9 @@ export default function CreateEditBlog() {
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   const blogId = params.blogId;
 
+  const { supabase } = createServerClient(request);
+
   const uploadHandler = unstable_composeUploadHandlers(
-    // our custom upload handler
     async ({ name, contentType, data, filename }) => {
       if (name === "cover-image") {
         invariant(filename, "file name is missing");
@@ -57,14 +82,30 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
         for await (const x of data) {
           dataArray1.push(x);
         }
-        try {
-          const bucket = await uploadToBucket(
-            "blogs",
-            "cover-images",
-            new File(dataArray1, filename, { type: contentType })
-          );
-        } catch (e) {
-          console.log({ e });
+        const { data: uploadData, error: uploadError } = await uploadToBucket(
+          supabase,
+          "blogs",
+          "cover-images",
+          new File(dataArray1, filename, { type: contentType })
+        );
+
+        console.log({ uploadData, uploadError });
+
+        if (uploadError) {
+          /**
+           * uploadError: {
+            statusCode: '409',
+            error: 'Duplicate',
+            message: 'The resource already exists'
+          }
+           */
+          // todo: handle error
+          console.log({ uploadError });
+          return undefined;
+        } else {
+          const imageUrl = getPublicUrl(supabase, "blogs", uploadData.path);
+          console.log({ imageUrl });
+          return imageUrl;
         }
       }
       return undefined;
@@ -79,20 +120,23 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   );
 
   const semanticHtml = formData.get("semantic-html")?.toString();
-  const coverImage = formData.get("cover-image");
-  const title = formData.get("title");
-
-  console.log({ semanticHtml, coverImage, title });
+  const coverImageUrl = formData.get("cover-image")?.toString();
+  const title = formData.get("title")?.toString();
 
   invariant(semanticHtml, "Please provide a semantic html to save :)");
+  invariant(coverImageUrl, "Please provide a cover image");
+  invariant(title, "Please provide a title");
 
   if (blogId === "new") {
     const blog = await db.blog.create({
       data: {
         semanticHtml,
+        coverImageUrl,
+        title,
       },
     });
-    return { blog, message: "Blog created successfully" };
+    const url = `/dashboard/blogs/${blog.id}`;
+    return redirect(url);
   }
 
   const blog = await db.blog.update({
@@ -101,7 +145,10 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     },
     data: {
       semanticHtml,
+      coverImageUrl,
+      title,
     },
   });
+
   return { blog, message: "Blog updated successfully" };
 };

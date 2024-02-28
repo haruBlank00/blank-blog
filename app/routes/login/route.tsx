@@ -1,7 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ActionFunctionArgs, redirect } from "@remix-run/node";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  json,
+  redirect,
+} from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
@@ -12,8 +16,8 @@ import { Button } from "~/components/ui/button";
 import { Card, CardDescription, CardTitle } from "~/components/ui/card";
 import { Form as ShadForm } from "~/components/ui/form";
 import { toast } from "~/components/ui/use-toast";
-import { signInWithPassword, supabase } from "~/lib/supabase";
-
+import { db } from "~/lib/prisma";
+import { createServerClient, supabase } from "~/lib/supabase";
 const loginSchema = z.object({
   email: z.string().min(1, {
     message: "Email is required",
@@ -89,6 +93,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   invariant(email, "Email is required");
   invariant(password, "Password is required");
+
+  const { headers, supabase } = createServerClient(request);
+  // const blogs = await db.blog.findMany({});
+  // console.log({ blogs });
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    console.log({ error });
+    return json(
+      { error: { message: error.message } },
+      { headers, status: 401 }
+    );
+  }
+
+  return redirect("/dashboard");
+
   /**
    * data: { user: null, session }
    * error: {
@@ -129,18 +153,4 @@ export const action = async ({ request }: ActionFunctionArgs) => {
    * }
    * }
    */
-  const { data, error } = await signInWithPassword(email, password);
-
-  if (error) {
-    return { error };
-  }
-
-  if (data.session) {
-    const { access_token, refresh_token, token_type } = data.session;
-    await supabase.auth.setSession({
-      access_token,
-      refresh_token,
-    });
-    return redirect("/dashboard");
-  }
 };

@@ -1,5 +1,7 @@
+import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { createServerClient } from "~/lib/supabase";
 
 const navLinks = [
   {
@@ -11,6 +13,16 @@ const navLinks = [
     label: "Blogs",
   },
 ];
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { supabase } = createServerClient(request);
+
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    return redirect("/login");
+  }
+  return null;
+};
 
 export default function DashboardLayout() {
   return (

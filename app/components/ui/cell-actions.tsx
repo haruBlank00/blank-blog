@@ -1,4 +1,4 @@
-import { Form, redirect, useNavigate } from "@remix-run/react";
+import { Form, redirect, useNavigate, useNavigation } from "@remix-run/react";
 import { Eye, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
@@ -11,11 +11,12 @@ import {
 
 const CellActions = ({ row }: { row: { id: string } }) => {
   const navigate = useNavigate();
-
+  const navigation = useNavigation();
   const id = row.id;
   const viewHandler = () => {
     navigate("/dashboard/blogs/" + id);
   };
+  const btnDisabled = ["loading", "submitting"].includes(navigation.state);
 
   const editHandler = () => {};
 
@@ -46,7 +47,12 @@ const CellActions = ({ row }: { row: { id: string } }) => {
 
         <Form action={`${id}/destroy`} method="post">
           <DropdownMenuItem>
-            <Button type="submit" variant={"ghost"} size={"sm"}>
+            <Button
+              type="submit"
+              variant={"ghost"}
+              size={"sm"}
+              disabled={btnDisabled}
+            >
               <Trash className="icon" />
               Delete
             </Button>
