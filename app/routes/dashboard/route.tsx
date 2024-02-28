@@ -1,6 +1,9 @@
 import { LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { NavLink, Outlet } from "@remix-run/react";
+import { Form, NavLink, Outlet } from "@remix-run/react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
+import { authenticator } from "~/services/auth.server";
+import { getSession } from "~/services/session.server";
 
 const navLinks = [
   {
@@ -12,6 +15,11 @@ const navLinks = [
     label: "Blogs",
   },
 ];
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  return await authenticator.isAuthenticated(request, {
+    failureRedirect: "/login",
+  });
+};
 
 export default function DashboardLayout() {
   return (
@@ -46,7 +54,10 @@ export default function DashboardLayout() {
                 </NavLink>
               </li>
             ))}
-            <li>Blogs</li>
+
+            <Form action="/logout" method="post">
+              <Button type="submit">Logout</Button>
+            </Form>
           </ul>
         </nav>
 

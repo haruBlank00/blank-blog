@@ -1,8 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
-import { Form, useActionData } from "@remix-run/react";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  json
+} from "@remix-run/node";
+import { Form } from "@remix-run/react";
 import { useForm } from "react-hook-form";
-import invariant from "tiny-invariant";
 import { z } from "zod";
 import FormBuilder, {
   TInputField,
@@ -10,7 +13,7 @@ import FormBuilder, {
 import { Button } from "~/components/ui/button";
 import { Card, CardDescription, CardTitle } from "~/components/ui/card";
 import { Form as ShadForm } from "~/components/ui/form";
-import { toast } from "~/components/ui/use-toast";
+import { authenticator } from "~/services/auth.server";
 const loginSchema = z.object({
   email: z.string().min(1, {
     message: "Email is required",
@@ -38,6 +41,12 @@ const loginFields: TInputField[] = [
 
 type TLoginSchema = z.infer<typeof loginSchema>;
 
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  return await authenticator.isAuthenticated(request, {
+    successRedirect: "/dashboard",
+  });
+};
+
 export default function Login() {
   const form = useForm<TLoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -46,15 +55,6 @@ export default function Login() {
       password: "",
     },
   });
-  const actionData = useActionData<typeof action>();
-
-  if (actionData?.error) {
-    toast({
-      variant: "destructive",
-      title: "Authentication error",
-      description: actionData?.error?.message,
-    });
-  }
 
   return (
     <div className="h-screen w-screen grid place-items-center">
@@ -80,12 +80,10 @@ export default function Login() {
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const formData = await request.formData();
-  const email = formData.get("email")?.toString();
-  const password = formData.get("password")?.toString();
-
-  invariant(email, "Email is required");
-  invariant(password, "Password is required");
-
-  return redirect("/dashboard");
+  await authenticator.authenticate("user-pass", request, {
+    throwOnError: true,
+    successRedirect: "/dashboard",
+    failureRedirect: "/login",
+  });
+  return json({ status: 401, message: "couln't login" });
 };

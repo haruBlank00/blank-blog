@@ -41,6 +41,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.50.1",
+    "remix-auth": "^3.6.0",
+    "remix-auth-form": "^1.4.0",
     "remix-utils": "^7.5.0",
     "remove": "^0.1.5",
     "shadcn-ui": "^0.8.0",
