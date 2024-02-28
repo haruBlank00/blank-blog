@@ -1,6 +1,4 @@
 import type { MetaFunction } from "@remix-run/node";
-import { type LoaderFunctionArgs } from "@remix-run/node";
-import { createServerClient, parse, serialize } from "@supabase/ssr";
 export const meta: MetaFunction = () => {
   return [
     { title: "New Remix App" },

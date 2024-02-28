@@ -5,11 +5,8 @@ import { Button } from "~/components/ui/button";
 import { DataTable } from "~/components/ui/data-table";
 import { db } from "~/lib/prisma";
 import { columns } from "./table/columns";
-import { supabase } from "~/lib/supabase";
 
 export const loader = async () => {
-  const { data, error } = await supabase.auth.getSession();
-  console.log({ data });
   try {
     const blogs = await db.blog.findMany({});
     return { blogs };

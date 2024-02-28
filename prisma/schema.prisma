@@ -5,15 +5,12 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-  schemas   = ["public", "auth"]
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Blog {
@@ -25,12 +22,4 @@ model Blog {
   semanticHtml String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  @@schema("public")
-}
-
-model User {
-  id String @id @default(uuid())
-
-  @@schema("auth")
 }

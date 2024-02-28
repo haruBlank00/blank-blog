@@ -6,16 +6,11 @@ import {
   unstable_createMemoryUploadHandler,
   unstable_parseMultipartFormData,
 } from "@remix-run/node";
-import { useActionData, useLoaderData, useNavigation } from "@remix-run/react";
-import { serialize } from "@supabase/ssr";
+import { useActionData, useLoaderData } from "@remix-run/react";
 import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/prisma";
-import {
-  createServerClient,
-  getPublicUrl,
-  uploadToBucket,
-} from "~/lib/supabase";
+
 import { Editor } from "./editor.client";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
@@ -72,41 +67,9 @@ export default function CreateEditBlog() {
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   const blogId = params.blogId;
 
-  const { supabase } = createServerClient(request);
-
   const uploadHandler = unstable_composeUploadHandlers(
     async ({ name, contentType, data, filename }) => {
       if (name === "cover-image") {
-        invariant(filename, "file name is missing");
-        const dataArray1 = [];
-        for await (const x of data) {
-          dataArray1.push(x);
-        }
-        const { data: uploadData, error: uploadError } = await uploadToBucket(
-          supabase,
-          "blogs",
-          "cover-images",
-          new File(dataArray1, filename, { type: contentType })
-        );
-
-        console.log({ uploadData, uploadError });
-
-        if (uploadError) {
-          /**
-           * uploadError: {
-            statusCode: '409',
-            error: 'Duplicate',
-            message: 'The resource already exists'
-          }
-           */
-          // todo: handle error
-          console.log({ uploadError });
-          return undefined;
-        } else {
-          const imageUrl = getPublicUrl(supabase, "blogs", uploadData.path);
-          console.log({ imageUrl });
-          return imageUrl;
-        }
       }
       return undefined;
     },
