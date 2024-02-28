@@ -1,3 +1,4 @@
+import { User } from "@prisma/client";
 import { createCookieSessionStorage } from "@remix-run/node";
 
 export let sessionStorage = createCookieSessionStorage({
@@ -11,4 +12,15 @@ export let sessionStorage = createCookieSessionStorage({
   },
 });
 
-export let { getSession, commitSession, destroySession } = sessionStorage;
+export const getSession = (request: Request) => {
+  const cookie = request.headers.get("Cookie");
+  return sessionStorage.getSession(cookie);
+};
+
+export const getUser = async (request: Request) => {
+  const cookie = request.headers.get("Cookie");
+  const session = await sessionStorage.getSession(cookie);
+  const user: User = session.data.user;
+  return user;
+};
+// export let { getSession, commitSession, destroySession } = sessionStorage;

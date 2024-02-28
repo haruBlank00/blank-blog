@@ -11,22 +11,24 @@ import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/prisma";
 
-import cloudinaryServer from "~/lib/cloudinary.server";
-import { Editor } from "./editor.client";
 import { uploadImage } from "~/services/cloudinary.server";
+import { Editor } from "./editor.client";
+import { authenticator } from "~/services/auth.server";
+import { getSession, getUser } from "~/services/session.server";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const blogId = params.blogId;
+  const user = await getUser(request);
   try {
     if (blogId !== "new") {
       const blog = await db.blog.findFirst({
         where: {
+          userId: user.id,
           id: blogId,
         },
       });
 
       const { id, semanticHtml, title, coverImageUrl } = blog || {};
-      console.log(coverImageUrl);
       return {
         id,
         semanticHtml,
@@ -68,17 +70,15 @@ export default function CreateEditBlog() {
 
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   const blogId = params.blogId;
-
+  const user = await getUser(request);
   const uploadHandler = unstable_composeUploadHandlers(
     async ({ name, contentType, data, filename }) => {
       if (name === "cover-image") {
         const image = await uploadImage(data);
-        console.log({ image });
         return image.secure_url;
       }
       return undefined;
     },
-    // fallback to memory for everything else
     unstable_createMemoryUploadHandler()
   );
 
@@ -98,6 +98,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   if (blogId === "new") {
     const blog = await db.blog.create({
       data: {
+        userId: user.id,
         semanticHtml,
         coverImageUrl,
         title,
@@ -110,6 +111,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   const blog = await db.blog.update({
     where: {
       id: blogId,
+      userId: user.id,
     },
     data: {
       semanticHtml,
