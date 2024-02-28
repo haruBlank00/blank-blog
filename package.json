@@ -11,6 +11,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@cloudinary/url-gen": "^1.18.0",
     "@hookform/resolvers": "^3.3.4",
     "@prisma/client": "5.10.2",
     "@radix-ui/react-aspect-ratio": "^1.0.3",
@@ -28,6 +29,7 @@
     "@tanstack/react-table": "^8.12.0",
     "add": "^2.0.6",
     "class-variance-authority": "^0.7.0",
+    "cloudinary": "^2.0.1",
     "clsx": "^2.1.0",
     "dropdown-menu": "^0.1.1",
     "isbot": "^4.1.0",
@@ -40,6 +42,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.50.1",
     "remix-utils": "^7.5.0",
+    "remove": "^0.1.5",
     "shadcn-ui": "^0.8.0",
     "skeleton": "^0.1.2",
     "tailwind-merge": "^2.2.1",

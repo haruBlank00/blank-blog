@@ -11,7 +11,9 @@ import { ClientOnly } from "remix-utils/client-only";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/prisma";
 
+import cloudinaryServer from "~/lib/cloudinary.server";
 import { Editor } from "./editor.client";
+import { uploadImage } from "~/services/cloudinary.server";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const blogId = params.blogId;
@@ -70,6 +72,9 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   const uploadHandler = unstable_composeUploadHandlers(
     async ({ name, contentType, data, filename }) => {
       if (name === "cover-image") {
+        const image = await uploadImage(data);
+        console.log({ image });
+        return image.secure_url;
       }
       return undefined;
     },
@@ -115,3 +120,24 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
   return { blog, message: "Blog updated successfully" };
 };
+
+async function uploadImageToCloudinary(data: AsyncIterable<Uint8Array>) {
+  // const uploadPromise = new Promise<UploadApiResponse>(
+  //   async (resolve, reject) => {
+  //     const uploadStream = cloudinaryServer.uploader.upload_stream(
+  //       {
+  //         folder: "coverImages",
+  //       },
+  //       (error, result) => {
+  //         if (error) {
+  //           reject(error);
+  //           return;
+  //         }
+  //         result && resolve(result);
+  //       }
+  //     );
+  //     await writeAsyncIterableToWritable(data, uploadStream);
+  //   }
+  // );
+  // return uploadPromise;
+}
