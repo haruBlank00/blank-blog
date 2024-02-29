@@ -57,3 +57,7 @@ export default function Blogs() {
     </div>
   );
 }
+
+export const ErrorBoundary = () => {
+  return <div>something went wrong</div>;
+};
